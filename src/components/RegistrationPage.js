@@ -1,6 +1,8 @@
 import React from 'react'
 import topicService from '../services/topic'
 import userService from '../services/user'
+import registrationService from '../services/registration'
+import configurationService from '../services/configuration'
 import { connect } from 'react-redux'
 import './RegistrationPage.css'
 import ReactDragList from 'react-drag-list'
@@ -26,14 +28,24 @@ class RegistrationPage extends React.Component {
   }
 
   async fetchQuestions() {
-    this.props.updateQuestions(testQuestions)
+    try {
+      const fetchedConfiguration = await configurationService.getActive()
+      const fetchedQuestions = fetchedConfiguration.registration_question_set.questions
+      this.props.updateQuestions(JSON.parse(fetchedQuestions))
+    } catch (e) {
+      console.log('error happened', e.response)
+      this.props.setError('Error fetching questions')
+      setTimeout(() => {
+        this.props.clearNotifications()
+      }, 3000)
+    }
   }
 
   async fetchTopics() {
     try {
       const fetchedTopics = await topicService
         .getAllActive()
-        .then(function(defs) {
+        .then(function (defs) {
           return defs
         })
       //sorts topics based on timestamp
@@ -64,6 +76,16 @@ class RegistrationPage extends React.Component {
       var loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'))
       loggedInUser['user'] = response.user
       localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser))
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+  submitRegistration = async () => {
+    this.updateUser()
+    try {
+      const response = await registrationService.create({ questions: this.props.questions, preferred_topics: this.props.topics })
+      console.log(response)
     } catch (e) {
       console.log(e)
     }
@@ -151,7 +173,7 @@ class RegistrationPage extends React.Component {
           {questions}
         </div>
         <Button
-          onClick={this.updateUser}
+          onClick={this.submitRegistration}
           variant="outlined"
           style={{ backgroundColor: 'white' }}
         >
@@ -161,13 +183,6 @@ class RegistrationPage extends React.Component {
     )
   }
 }
-
-const testQuestions = [
-  { question: 'Test scale question?', type: 'scale' },
-  { question: 'Test input question?', type: 'text' },
-  { question: 'Another test scale question?', type: 'scale' },
-  { question: 'Ok?', type: 'text' }
-]
 
 const mapStateToProps = (state) => {
   return {
