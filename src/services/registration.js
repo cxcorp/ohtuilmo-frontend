@@ -13,4 +13,12 @@ const create = async ({ questions, preferred_topics }) => {
   return response.data.registration
 }
 
-export default { create }
+const getAll = async () => {
+  const config = {
+    headers: { 'Authorization': 'bearer ' + getUserToken() }
+  }
+  const response = await axios.get(url, config)
+  return response.data.registrations
+}
+
+export default { create, getAll }

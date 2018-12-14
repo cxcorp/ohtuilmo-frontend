@@ -1,115 +1,9 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import { withStyles } from '@material-ui/core/styles'
-import Table from '@material-ui/core/Table'
-import TableBody from '@material-ui/core/TableBody'
-import TableCell from '@material-ui/core/TableCell'
-import TableHead from '@material-ui/core/TableHead'
-import TableRow from '@material-ui/core/TableRow'
-import Paper from '@material-ui/core/Paper'
+import participantsPageActions from '../reducers/actions/participantsPageActions'
+import notificationActions from '../reducers/actions/notificationActions'
+import registrationService from '../services/registration'
 import Button from '@material-ui/core/Button'
-
-const styles = theme => ({
-  root: {
-    width: '100%',
-    marginTop: theme.spacing.unit * 3,
-    overflowX: 'auto',
-  },
-  table: {
-    minWidth: 700,
-  },
-})
-
-const testRows = [
-  {
-    id: 1,
-    preferredTopics: [
-      {
-        topic: 'HTML #1'
-      },
-      {
-        topic: 'JAVA #2'
-      },
-      {
-        topic: 'PYTHON #1'
-      },
-      {
-        topic: 'JS-PRO #99'
-      },
-      {
-        topic: 'C #22'
-      }
-    ],
-    questions: 'questions',
-    semester: '2019'
-  },
-  {
-    id: 2,
-    preferredTopics: [
-      {
-        topic: 'JAVA #1'
-      },
-      {
-        topic: 'JAVA #2'
-      },
-      {
-        topic: 'PYTHON #1'
-      },
-      {
-        topic: 'HTML #2'
-      },
-      {
-        topic: 'DOCUMENTATION PRO'
-      }
-    ],
-    questions: 'questions',
-    semester: '2019'
-  },
-  {
-    id: 3,
-    preferredTopics: [
-      {
-        topic: 'HTML #1'
-      },
-      {
-        topic: 'JAVA #2'
-      },
-      {
-        topic: 'JAVA #1'
-      },
-      {
-        topic: 'JS-PRO #99'
-      },
-      {
-        topic: 'C #22'
-      }
-    ],
-    questions: 'questions',
-    semester: '2019'
-  },
-  {
-    id: 4,
-    preferredTopics: [
-      {
-        topic: 'HTML #1'
-      },
-      {
-        topic: 'HTML #2'
-      },
-      {
-        topic: 'HTML #3'
-      },
-      {
-        topic: 'HTML #99'
-      },
-      {
-        topic: 'HTML #22'
-      }
-    ],
-    questions: 'questions',
-    semester: '2019'
-  }
-]
 
 class ParticipantsPage extends React.Component {
 
@@ -132,44 +26,56 @@ class ParticipantsPage extends React.Component {
     }
   }
 
+  async componentDidMount() {
+    try {
+      const fetchedRegistrations = await registrationService.getAll()
+      //sorts topics based on timestamp
+      const sortedRegistrations = fetchedRegistrations.sort((t1, t2) =>
+        t1.createdAt > t2.createdAt ? -1 : t1.createdAt < t2.createdAt ? 1 : 0
+      )
+      this.props.updateRegistrations(sortedRegistrations)
+    } catch (e) {
+      console.log('error happened', e.response)
+      this.props.setError('Some error happened')
+      setTimeout(() => {
+        this.props.clearNotifications()
+      }, 3000)
+    }
+  }
+
   render() {
     return (
       <div className="participants-container">
         <div>
-          <Paper className="participants-paper">
-            <Table className="participants-table">
-              <TableHead>
-                <TableRow>
-                  <TableCell numeric>id</TableCell>
-                  <TableCell>Preferred Topic #1</TableCell>
-                  <TableCell>Preferred Topic #2</TableCell>
-                  <TableCell>Preferred Topic #3</TableCell>
-                  <TableCell>Preferred Topic #4</TableCell>
-                  <TableCell>Preferred Topic #5</TableCell>
-                  <TableCell>Questions</TableCell>
-                  <TableCell>Semester</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {testRows.map(row => {
-                  return (
-                    <TableRow key={row.id}>
-                      <TableCell numeric component="th" scope="row">
-                        {row.id}
-                      </TableCell>
-                      <TableCell>{row.preferredTopics[0].topic}</TableCell>
-                      <TableCell>{row.preferredTopics[1].topic}</TableCell>
-                      <TableCell>{row.preferredTopics[2].topic}</TableCell>
-                      <TableCell>{row.preferredTopics[3].topic}</TableCell>
-                      <TableCell>{row.preferredTopics[4].topic}</TableCell>
-                      <TableCell>{row.questions}</TableCell>
-                      <TableCell>{row.semester}</TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </Paper>
+          <table>
+            <tr>
+              <th>id</th>
+              <th>student_number</th>
+              <th>preferred topic #1</th>
+              <th>preferred topic #2</th>
+              <th>preferred topic #3</th>
+              <th>preferred topic #4</th>
+              <th>preferred topic #5</th>
+              <th></th>
+              <th>created</th>
+              <th>configuration</th>
+            </tr>
+            {this.props.registrations.map(registration => {
+              <tr>
+                <td>${registration.id}</td>
+                <td>${registration.student_number}</td>
+                <td>preferred topic #1</td>
+                <td>preferred topic #2</td>
+                <td>preferred topic #3</td>
+                <td>preferred topic #4</td>
+                <td>preferred topic #5</td>
+                <td></td>
+                <td>${registration.createdAt}</td>
+                <td>${registration.configuration_id}</td>
+              </tr>
+            })
+            }
+          </table>
         </div>
         <div className="export-cvs-button">
           <Button variant="outlined">
@@ -183,11 +89,13 @@ class ParticipantsPage extends React.Component {
 
 const mapStateToProps = state => {
   return {
-    state: state
+    registrations: state.participantsPage.registrations
   }
 }
 
 const mapDispatchToProps = {
+  ...participantsPageActions,
+  ...notificationActions
 }
 
 const ConnectedParticipantsPage = connect(
@@ -195,4 +103,4 @@ const ConnectedParticipantsPage = connect(
   mapDispatchToProps
 )(ParticipantsPage)
 
-export default withStyles(styles)(ConnectedParticipantsPage)
+export default ConnectedParticipantsPage
